@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://apis.data.go.kr/1160100/service/GetSecuritiesProductInfoService/getETFSecuritiesProductInfo';
+// Use proxy in development to bypass CORS
+const BASE_URL = import.meta.env.DEV
+    ? '/api/1160100/service/GetSecuritiesProductInfoService/getETFSecuritiesProductInfo'
+    : 'https://apis.data.go.kr/1160100/service/GetSecuritiesProductInfoService/getETFSecuritiesProductInfo';
 
 export async function fetchEtfData(serviceKey, date, pageNo = 1, numOfRows = 1000) {
     try {
