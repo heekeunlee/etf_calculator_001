@@ -38,6 +38,7 @@ export async function calculateMomentum(apiKey, refDateStr, weights, filters, on
                     return { date: dateStr, items: data };
                 }
             } catch (e) {
+                if (onProgress) onProgress(`⚠️ Failed to fetch for ${dateStr}: ${e.message}`);
                 console.warn(`Failed to fetch for ${dateStr}`, e);
             }
             // Go back 1 day

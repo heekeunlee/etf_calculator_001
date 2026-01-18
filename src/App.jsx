@@ -10,7 +10,14 @@ function App() {
   const [cacheStatus, setCacheStatus] = useState(null)
 
   // Simple in-memory cache: { 'YYYYMMDD': [items...] }
+  // Simple in-memory cache: { 'YYYYMMDD': [items...] }
   const [dataCache, setDataCache] = useState({})
+  const [logs, setLogs] = useState([])
+
+  const addLog = (msg) => {
+    setLogs(prev => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
+    console.log(msg);
+  }
 
   const handleCalculate = async (params) => {
     console.log("Calculating with params:", params)
@@ -45,11 +52,15 @@ function App() {
         params.refDate,
         params.weights,
         params.filters,
-        (msg) => console.log(msg) // Progress
+        (msg) => addLog(msg) // Progress
       );
       setResults(calculatedResults);
     } catch (error) {
       console.error("Calculation failed", error);
+      addLog(`❌ Error: ${error.message}`);
+      if (error.response) {
+        addLog(`Server responded with: ${JSON.stringify(error.response.data)}`);
+      }
       alert(`계산 중 오류가 발생했습니다: ${error.message}`);
     } finally {
       setLoading(false);
@@ -116,6 +127,11 @@ function App() {
 
         <ResultsTable results={results} />
 
+        {/* Debug Console */}
+        <div className="bg-black text-green-400 p-4 rounded-md text-xs font-mono h-48 overflow-y-auto">
+          <h4 className="font-bold border-b border-green-700 pb-1 mb-2">Debug Console (에러 확인용)</h4>
+          {logs.length === 0 ? <p className="text-gray-500">대기 중...</p> : logs.map((log, i) => <div key={i}>{log}</div>)}
+        </div>
       </main>
 
       <footer className="border-t py-8 mt-12 bg-white">
