@@ -108,7 +108,7 @@ function App() {
         </div>
       </header>
 
-      <main className="container mx-auto p-4 py-8 space-y-8 max-w-7xl">
+      <main className="container mx-auto p-2 md:p-4 py-4 md:py-8 space-y-4 md:space-y-8 max-w-7xl">
 
         <ControlPanel onCalculate={handleCalculate} />
 
