@@ -28,6 +28,7 @@ export async function calculateMomentum(apiKey, refDateStr, weights, filters, on
     const fetchValidData = async (targetDate) => {
         let currentAttempts = 0;
         let d = targetDate;
+        let lastError = null;
 
         while (currentAttempts < 7) { // Try up to 7 days back
             const dateStr = format(d, 'yyyyMMdd');
@@ -38,14 +39,16 @@ export async function calculateMomentum(apiKey, refDateStr, weights, filters, on
                     return { date: dateStr, items: data };
                 }
             } catch (e) {
-                if (onProgress) onProgress(`⚠️ Failed to fetch for ${dateStr}: ${e.message}`);
+                lastError = e;
+                const msg = `⚠️ Failed to fetch for ${dateStr}: ${e.message}`;
+                if (onProgress) onProgress(msg);
                 console.warn(`Failed to fetch for ${dateStr}`, e);
             }
             // Go back 1 day
             d = subDays(d, 1);
             currentAttempts++;
         }
-        return { date: null, items: [] };
+        return { date: null, items: [], error: lastError };
     };
 
     const results = await Promise.all(targets.map(t => fetchValidData(t.date)));
@@ -56,7 +59,8 @@ export async function calculateMomentum(apiKey, refDateStr, weights, filters, on
     });
 
     if (!dataMap.t.date) {
-        throw new Error("기준일에 대한 데이터를 찾을 수 없습니다. 휴장일이거나 서비스 키를 확인해주세요.");
+        const detailMsg = dataMap.t.error ? ` (${dataMap.t.error.message})` : "";
+        throw new Error(`기준일에 대한 데이터를 찾을 수 없습니다. 휴장일이거나 서비스 키를 확인해주세요.${detailMsg}`);
     }
 
     // 3. Process Data
