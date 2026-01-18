@@ -20,30 +20,41 @@ export async function fetchEtfData(serviceKey, date, pageNo = 1, numOfRows = 100
             const response = await axios.get(`/api${API_PATH}`, { params });
             responseData = response.data;
         } else {
-            // Production: Use allorigins.win Public Proxy to bypass CORS
-            // 1. Construct the target URL with query parameters
+            // Production: Use CORS Proxy
             const targetUrl = new URL(`https://apis.data.go.kr${API_PATH}`);
             Object.keys(params).forEach(key => targetUrl.searchParams.append(key, params[key]));
+            const targetUrlStr = targetUrl.toString();
 
-            // 2. Wrap via allorigins
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl.toString())}`;
-            const response = await axios.get(proxyUrl);
-
-            // 3. Parse contents (allorigins returns JSON with 'contents' string)
-            if (response.data && response.data.contents) {
-                try {
-                    responseData = JSON.parse(response.data.contents);
-                } catch (e) {
-                    // Fallback if content is XML string or other
-                    responseData = response.data.contents;
+            try {
+                // Primary Proxy: corsproxy.io (Transparent)
+                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrlStr)}`;
+                const response = await axios.get(proxyUrl);
+                responseData = response.data;
+            } catch (err) {
+                console.warn("Primary proxy failed, trying fallback...", err);
+                // Fallback Proxy: allorigins.win
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrlStr)}`;
+                const response = await axios.get(proxyUrl);
+                if (response.data && response.data.contents) {
+                    try {
+                        responseData = JSON.parse(response.data.contents);
+                    } catch (e) {
+                        responseData = response.data.contents;
+                    }
+                } else {
+                    throw new Error("Fallback proxy response was empty");
                 }
-            } else {
-                throw new Error("Proxy response was empty");
             }
         }
 
-        // Check for API-specific error codes in JSON body (common in Korean Gov APIs)
-        // e.g. { response: { header: { resultCode: '99', resultMsg: '...' } } }
+        // Check for API-specific error codes
+        if (typeof responseData === 'string' && responseData.trim().startsWith('<')) {
+            // XML parsing attempt for error extraction could go here, 
+            // but usually 'resultCode' check below covers JSON responses.
+            // If it's XML, it means the API didn't return JSON as requested (Auth error mostly).
+            // We'll let the catch block handle the XML Error throwing.
+        }
+
         const header = responseData?.response?.header;
         if (header && header.resultCode !== '00') {
             throw new Error(`API Error [${header.resultCode}]: ${header.resultMsg}`);
@@ -52,7 +63,6 @@ export async function fetchEtfData(serviceKey, date, pageNo = 1, numOfRows = 100
         const items = responseData?.response?.body?.items?.item;
 
         if (!items) {
-            // It might be empty result, which is fine, but check header again
             return [];
         }
 
