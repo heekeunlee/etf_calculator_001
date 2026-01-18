@@ -31,13 +31,7 @@ export function ControlPanel({ onCalculate }) {
 
     return (
         <Card className="w-full">
-            <CardHeader>
-                <CardTitle className="text-center text-3xl font-bold">ETF 모멘텀 계산기</CardTitle>
-                <CardDescription className="text-center text-lg mt-2">
-                    공공데이터포털 API를 사용하여 기간별 ETF 수익률과 모멘텀 점수를 계산합니다.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
                 {/* API Key and Date */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start max-w-4xl mx-auto">
                     <div className="space-y-2">
